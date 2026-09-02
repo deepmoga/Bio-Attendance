@@ -220,9 +220,6 @@ class AttendanceDatabase {
     `).get(packetFingerprint);
 
     if (recent && now - recent.lastSeenAtMs < quietPeriodMs) {
-      this.db.prepare(`
-        UPDATE device_packet_state SET last_seen_at_ms = ? WHERE packet_fingerprint = ?
-      `).run(now, packetFingerprint);
       return recent.dedupeKey;
     }
 

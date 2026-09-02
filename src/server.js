@@ -141,8 +141,6 @@ function createApp(options = {}) {
         if (!result.duplicate) {
           console.log(`\x1b[32m[ATTENDANCE ${result.action.toUpperCase()}]\x1b[0m User: ${result.user?.name || result.deviceUserId} (ID: ${result.user?.deviceUserId || result.deviceUserId}) at ${result.eventTime}${result.durationMinutes ? ` | Duration: ${result.durationMinutes}m` : ''}`);
           broadcast({ type: 'attendance', results: [result], dashboard: db.summary() });
-        } else {
-          console.log(`\x1b[33m[DUPLICATE IGNORED]\x1b[0m User ID: ${event.deviceUserId}`);
         }
       } else {
         outcome = 'ignored';
@@ -187,8 +185,6 @@ function createApp(options = {}) {
         if (!result.duplicate) {
           console.log(`\x1b[32m[ATTENDANCE ${result.action.toUpperCase()}]\x1b[0m User: ${enrollment.user.name} (ID: ${deviceUserId}) at ${result.eventTime}${result.durationMinutes ? ` | Duration: ${result.durationMinutes}m` : ''}`);
           broadcast({ type: 'attendance', results: [result], dashboard: db.summary() });
-        } else {
-          console.log(`\x1b[33m[DUPLICATE DEBOUNCED]\x1b[0m User: ${enrollment.user.name} (ID: ${deviceUserId})`);
         }
       }
     } else if (!parsed) {
