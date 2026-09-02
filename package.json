@@ -1,0 +1,20 @@
+{
+  "name": "biometric-attendance",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Live ADMS/iClock biometric attendance dashboard",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "test": "node --test",
+    "migrate:legacy": "node scripts/migrate-legacy.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "better-sqlite3": "^13.0.3",
+    "express": "^5.2.1"
+  }
+}

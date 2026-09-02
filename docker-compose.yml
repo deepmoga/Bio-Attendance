@@ -1,0 +1,19 @@
+services:
+  attendance:
+    build: .
+    container_name: biometric-attendance
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: 8080
+      DATABASE_PATH: /app/data/attendance.db
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in .env}
+      DEVICE_TIMEZONE: ${DEVICE_TIMEZONE:-Asia/Kolkata}
+    volumes:
+      - attendance-data:/app/data
+
+volumes:
+  attendance-data:
+

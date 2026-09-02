@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#071a18" />
+    <title>Attendance Live</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#dashboard" aria-label="Attendance home">
+        <span class="brand-mark" aria-hidden="true"><span></span></span>
+        <span><strong>Attendance</strong><small>Live workforce board</small></span>
+      </a>
+      <div class="connection"><span id="liveDot" class="dot"></span><span id="liveText">Connecting…</span></div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div>
+          <p class="eyebrow">REAL-TIME ATTENDANCE</p>
+          <h1>Who's working right now?</h1>
+          <p class="subtle">Every biometric scan updates this board instantly.</p>
+        </div>
+        <div class="hero-actions">
+          <button class="secondary" id="soundToggle" title="Toggle audio chime on scan">🔔 Sound: <span id="soundStatus">On</span></button>
+          <button class="secondary danger-text" id="clearDataButton"><span>🗑</span> Clear Data</button>
+          <button class="primary" id="addUserButton"><span>＋</span> Register user</button>
+        </div>
+      </section>
+
+      <section class="metrics" aria-label="Attendance summary">
+        <article class="metric"><span class="metric-icon green">●</span><div><strong id="workingCount">0</strong><span>Working now</span></div></article>
+        <article class="metric"><span class="metric-icon slate">↗</span><div><strong id="checkedOutCount">0</strong><span>Checked out</span></div></article>
+        <article class="metric"><span class="metric-icon blue">◎</span><div><strong id="registeredCount">0</strong><span>Registered users</span></div></article>
+        <article class="metric"><span class="metric-icon amber">⌁</span><div><strong id="todayScansCount">0</strong><span>Scans today</span></div></article>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div><h2>Team status</h2><p>Current check-in state for every active user</p></div>
+          <label class="search"><span>⌕</span><input id="userSearch" type="search" placeholder="Search name or department" /></label>
+        </div>
+        <div id="userGrid" class="user-grid"></div>
+        <div id="emptyUsers" class="empty" hidden>
+          <div class="empty-icon">◎</div><h3>No users registered yet</h3><p>Add the biometric ID shown on your physical device.</p>
+          <button class="primary" id="emptyAddButton">Register first user</button>
+        </div>
+      </section>
+
+      <section class="split">
+        <section class="panel">
+          <div class="panel-head"><div><h2>Recent activity</h2><p>Latest biometric scans</p></div><button class="text-button" id="refreshButton">Refresh</button></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>User</th><th>Event</th><th>Time</th><th>Device</th></tr></thead>
+              <tbody id="activityRows"></tbody>
+            </table>
+            <p id="emptyActivity" class="empty-row" hidden>No scans received yet.</p>
+          </div>
+        </section>
+        <section class="panel device-panel">
+          <div class="panel-head"><div><h2>Devices</h2><p>Terminals that contacted this server</p></div></div>
+          <div id="deviceList" class="device-list"></div>
+          <p id="emptyDevices" class="empty-row" hidden>No device connected yet.</p>
+        </section>
+      </section>
+
+      <section class="panel logs-panel">
+        <div class="panel-head"><div><h2>Biometric scan logs</h2><p>One row per accepted check-in, check-out, or user registration</p></div><button class="text-button" id="refreshLogsButton">Refresh logs</button></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Received</th><th>Device</th><th>Request</th><th>User ID</th><th>Result</th><th>Detail</th></tr></thead>
+            <tbody id="deviceLogRows"></tbody>
+          </table>
+          <p id="emptyDeviceLogs" class="empty-row" hidden>No biometric scans recorded yet.</p>
+        </div>
+      </section>
+    </main>
+
+    <dialog id="userDialog">
+      <form id="userForm">
+        <div class="dialog-head"><div><p class="eyebrow">USER DIRECTORY</p><h2 id="dialogTitle">Register user</h2></div><button type="button" class="close" id="closeDialog" aria-label="Close">×</button></div>
+        <input type="hidden" id="userId" />
+        <label>Full name<input id="userName" name="name" required maxlength="100" autocomplete="name" placeholder="e.g. Aman Singh" /></label>
+        <label>Biometric user ID<input id="deviceUserId" name="deviceUserId" required maxlength="40" placeholder="e.g. 1" /><small>Use the exact PIN or employee ID enrolled on the device.</small></label>
+        <label>Department <span class="optional">Optional</span><input id="department" name="department" maxlength="100" placeholder="e.g. Operations" /></label>
+        <label id="activeLabel" class="toggle-row" hidden><span><strong>Active user</strong><small>Inactive users remain in history but scans are not toggled.</small></span><input id="userActive" type="checkbox" checked /></label>
+        <p id="formError" class="form-error" role="alert" hidden></p>
+        <div class="dialog-actions">
+          <button type="button" class="danger-button" id="deleteUserButton" hidden>Delete</button>
+          <span style="flex:1"></span>
+          <button type="button" class="secondary" id="cancelDialog">Cancel</button>
+          <button type="submit" class="primary" id="saveUser">Save user</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="clearDialog">
+      <div class="dialog-content" style="padding: 27px;">
+        <div class="dialog-head"><div><p class="eyebrow" style="color:var(--red);">ATTENDANCE RESET</p><h2>Clear Attendance Records</h2></div><button type="button" class="close" id="closeClearDialog" aria-label="Close">×</button></div>
+        <p>This will reset attendance logs and session history so you can start clean.</p>
+        <label class="toggle-row" style="margin: 16px 0;"><span><strong>Also delete registered users</strong><small>Check this if you want to wipe all enrolled users too.</small></span><input id="wipeUsersCheckbox" type="checkbox" /></label>
+        <p id="clearError" class="form-error" role="alert" hidden></p>
+        <div class="dialog-actions">
+          <button type="button" class="secondary" id="cancelClearDialog">Cancel</button>
+          <button type="button" class="danger-button" id="confirmClearButton">Yes, Clear Records</button>
+        </div>
+      </div>
+    </dialog>
+
+    <div id="scanToast" class="toast" role="status" aria-live="polite" hidden>
+      <span class="toast-icon" id="toastIcon">✓</span>
+      <div><strong id="toastTitle"></strong><span id="toastDetail"></span></div>
+    </div>
+  </body>
+</html>
