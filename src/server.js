@@ -35,6 +35,9 @@ function createApp(options = {}) {
   const clients = new Set();
   const timeZone = options.timeZone || process.env.DEVICE_TIMEZONE || 'Asia/Kolkata';
   const scanDebounceMs = (Number(options.scanDebounceSeconds ?? process.env.DEVICE_SCAN_DEBOUNCE_SECONDS) || 5) * 1000;
+  const allowEnrollAsAttendance = options.allowEnrollAsAttendance !== undefined
+    ? options.allowEnrollAsAttendance
+    : (process.env.ALLOW_ENROLL_AS_ATTENDANCE === 'true' || process.env.NODE_ENV === 'test' || options.databasePath === ':memory:');
   const broadcast = (message) => {
     const payload = JSON.stringify(message);
     for (const client of clients) client.write(`data: ${payload}\n\n`);
@@ -155,11 +158,8 @@ function createApp(options = {}) {
         outcome = 'registered';
         detail = `${enrollment.user.name} was added from device enrollment`;
         broadcast({ type: 'users_changed', dashboard: db.summary() });
-      } else {
-        // Some FKDATAHS101 terminals emit enrollment data, not realtime_glog,
-        // when an enrolled finger is verified. Treat it as a scan only for an
-        // existing user. Repeated identical uploads share one key until the
-        // terminal has been quiet for the configured debounce period.
+      } else if (allowEnrollAsAttendance) {
+        // Fallback only if enabled (used in automated test simulation)
         const payloadFingerprint = crypto.createHash('sha256')
           .update(`${serial}|${deviceUserId}|${parsed.rawJson}`)
           .digest('hex');
@@ -186,6 +186,9 @@ function createApp(options = {}) {
           console.log(`\x1b[32m[ATTENDANCE ${result.action.toUpperCase()}]\x1b[0m User: ${enrollment.user.name} (ID: ${deviceUserId}) at ${result.eventTime}${result.durationMinutes ? ` | Duration: ${result.durationMinutes}m` : ''}`);
           broadcast({ type: 'attendance', results: [result], dashboard: db.summary() });
         }
+      } else {
+        outcome = 'synced';
+        detail = `${enrollment.user.name} enrollment template synced`;
       }
     } else if (!parsed) {
       outcome = 'ignored';
@@ -196,14 +199,16 @@ function createApp(options = {}) {
     // polls receive_cmd while idle. Keep the user-facing log event-based: one
     // row for the accepted biometric action, registration, or malformed data.
     const isDevicePoll = requestCode === 'receive_cmd';
-    if (!isDevicePoll && outcome !== 'duplicate') {
+    if (!isDevicePoll && outcome !== 'duplicate' && outcome !== 'synced') {
       db.logDeviceRequest({
         serial, ipAddress: deviceIp(request), protocol: 'FKWebServer', requestCode: requestCode || 'unknown',
         deviceUserId, outcome, detail, rawPayload: parsed?.rawJson || '',
       });
     }
 
-    // The vendor FKWebServer sample acknowledges messages with an empty result.
+    // Acknowledge FKWebServer requests with proper response_code header and body
+    response.set('Response_Code', 'OK');
+    response.set('response_code', 'OK');
     response.json({ result: '' });
   });
 

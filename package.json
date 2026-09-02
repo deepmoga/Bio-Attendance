@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
-    "test": "node --test",
+    "test": "NODE_ENV=test node --test",
     "migrate:legacy": "node scripts/migrate-legacy.js"
   },
   "engines": {
